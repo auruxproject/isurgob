@@ -1,8 +1,18 @@
 # .htaccess para ISURGOB - Sistema de Administración Municipal
-# Configuración optimizada para EasyPanel y Apache
+# Configuración optimizada para EasyPanel, Apache y Traefik
 
 # Habilitar el motor de reescritura
 RewriteEngine On
+
+# Configuración específica para EasyPanel/Traefik
+# Manejar headers de proxy reverso
+RewriteCond %{HTTP:X-Forwarded-Proto} https
+RewriteRule .* - [E=HTTPS:on]
+
+# Configurar variables de entorno para proxy
+SetEnvIf X-Forwarded-Proto https HTTPS=on
+SetEnvIf X-Forwarded-For ^(.*)$ REMOTE_ADDR=$1
+SetEnvIf X-Forwarded-Host ^(.*)$ HTTP_HOST=$1
 
 # Configuración de seguridad
 # Ocultar información del servidor
@@ -66,7 +76,7 @@ RedirectMatch 403 /migrations/
     ExpiresDefault "access plus 2 days"
 </IfModule>
 
-# Configuración de headers de seguridad
+# Configuración de headers de seguridad compatibles con Traefik
 <IfModule mod_headers.c>
     # Prevenir clickjacking
     Header always append X-Frame-Options SAMEORIGIN
@@ -77,15 +87,20 @@ RedirectMatch 403 /migrations/
     # Habilitar XSS protection
     Header set X-XSS-Protection "1; mode=block"
     
-    # Configurar Content Security Policy
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'self';"
+    # Configurar Content Security Policy (relajada para EasyPanel)
+    Header set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self';"
     
     # Configurar Referrer Policy
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     
+    # Headers específicos para proxy reverso
+    Header always set X-Forwarded-Proto %{HTTPS}s
+    Header always set X-Real-IP %{REMOTE_ADDR}s
+    
     # Remover headers que revelan información del servidor
     Header unset Server
     Header unset X-Powered-By
+    Header unset X-Apache-Version
 </IfModule>
 
 # Configuración de límites de subida
@@ -97,10 +112,17 @@ RedirectMatch 403 /migrations/
     php_value memory_limit 256M
 </IfModule>
 
-# Reglas de reescritura para Yii2
+# Reglas de reescritura para Yii2 compatibles con EasyPanel
+# Manejar correctamente las URLs con proxy
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . index.php
+RewriteCond %{REQUEST_URI} !^/(health|status|ping)$
+RewriteRule . index.php [L,QSA]
+
+# Endpoint de health check para EasyPanel
+RewriteRule ^health$ health.php [L]
+RewriteRule ^status$ health.php [L]
+RewriteRule ^ping$ health.php [L]
 
 # Redirección HTTPS (descomente si usa SSL)
 # RewriteCond %{HTTPS} off
