@@ -63,9 +63,23 @@ date_default_timezone_set(getenv('APP_TIMEZONE') ?: 'America/Argentina/Buenos_Ai
 ini_set('memory_limit', '256M');
 ini_set('max_execution_time', 300);
 
-// Cargar autoloader de Composer y Yii
-require __DIR__ . '/yii/autoload.php';
-require __DIR__ . '/yii/yiisoft/yii2/Yii.php';
+// Cargar autoloader de Composer
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+} elseif (file_exists(__DIR__ . '/yii/autoload.php')) {
+    require_once __DIR__ . '/yii/autoload.php';
+} else {
+    die('Error: Composer autoloader not found. Please run "composer install" or check autoloader path.');
+}
+
+// Cargar framework Yii
+if (file_exists(__DIR__ . '/vendor/yiisoft/yii2/Yii.php')) {
+    require_once __DIR__ . '/vendor/yiisoft/yii2/Yii.php';
+} elseif (file_exists(__DIR__ . '/yii/yiisoft/yii2/Yii.php')) {
+    require_once __DIR__ . '/yii/yiisoft/yii2/Yii.php';
+} else {
+    die('Error: Yii framework not found. Please run "composer install" or check Yii path.');
+}
 
 // Cargar configuración de la aplicación
 $config = require __DIR__ . '/config/web.php';
