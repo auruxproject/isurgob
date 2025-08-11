@@ -1,0 +1,32 @@
+# Archivos de Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Archivos de Git
+.git
+.gitignore
+
+# Archivos de documentación
+README.md
+LICENSE*
+docs/
+
+# Archivos temporales
+*.tmp
+*.log
+*.cache
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules si existen
+node_modules/
+npm-debug.log
